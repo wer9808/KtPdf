@@ -186,18 +186,31 @@ class PdfLexer {
         if (contentBytes.contentEquals("stream".toByteArray())) { // check stream
             return scanStream()
         }
+        else if (contentBytes.contentEquals("obj".toByteArray())) {
+            kind = PdfToken.Kind.StartObject
+            content = null
+        }
+        else if (contentBytes.contentEquals("endobj".toByteArray())) {
+            kind = PdfToken.Kind.EndObject
+            content = null
+        }
+        else if (contentBytes.contentEquals("R".toByteArray())) {
+            kind = PdfToken.Kind.Indirect
+            content = null
+        }
         else if (contentBytes.contentEquals("true".toByteArray())) {
             kind = PdfToken.Kind.True
-            content = null
         }
         else if (contentBytes.contentEquals("false".toByteArray())) {
             kind = PdfToken.Kind.False
-            content = null
+        }
+        else if (contentBytes.contentEquals("null".toByteArray())) {
+            kind = PdfToken.Kind.Null
         }
         return PdfToken(kind, content)
     }
 
-    private fun scanStream(): PdfToken {
+    fun scanStream(): PdfToken {
         val content = arrayListOf<Byte>()
         var byte = pdfContent[++current]
         while (true) {
@@ -465,27 +478,6 @@ class PdfToken(var kind: Kind, val content: ArrayList<Byte>?) {
 
         )
 
-        fun matchKind(kind: Kind): Kind {
-            val real: PdfToken.Kind = when (kind) {
-                Kind.LeftParen -> Kind.String
-                Kind.RightParen -> Kind.String
-                Kind.LessThan -> Kind.HexString
-                Kind.GreaterThan -> Kind.HexString
-                Kind.StartDict -> Kind.Dict
-                Kind.EndDict -> Kind.Dict
-                Kind.LeftBracket -> Kind.Array
-                Kind.RightBracket -> Kind.Array
-                else -> kind
-            }
-
-            return real
-        }
-
-        fun isWrapper(byte: Byte): Boolean {
-
-            return true
-        }
-
     }
 
 
@@ -497,6 +489,7 @@ class PdfToken(var kind: Kind, val content: ArrayList<Byte>?) {
 
         True,
         False,
+        Null,
 
         Object,
         Stream,
